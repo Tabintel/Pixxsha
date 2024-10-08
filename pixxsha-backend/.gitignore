@@ -30,6 +30,11 @@ yarn-error.log*
 
 # Optional: ignore package-lock.json if you're using npm
 package-lock.json
+package.json
 
 # TypeScript compilation output
 *.tsbuildinfo
+
+# Go mod and sum
+go.mod
+go.sum
