@@ -1,31 +1,22 @@
+  import { PinataService } from './services/PinataService';
+  import fs from 'fs';
+  import path from 'path';
 
-import { PinataSDK } from "pinata-web3";
-import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
+  async function testPinataService() {
+    const pinataService = new PinataService();
 
-dotenv.config();
+    try {
+      const filePath = path.join(__dirname, 'assets', 'test-image.jpeg');
+      const fileBuffer = fs.readFileSync(filePath);
 
-const pinata = new PinataSDK({
-  pinataJwt: process.env.PINATA_JWT!,
-  pinataGateway: process.env.PINATA_GATEWAY!,
-});
+      const ipfsHash = await pinataService.uploadFile(fileBuffer, "test-image.jpeg");
+      console.log("Upload result:", ipfsHash);
 
-async function testUpload() {
-  try {
-    // Create a test file
-    const filePath = path.join(__dirname, 'assets', 'test-image.jpeg');
-    const file = new File([fs.readFileSync(filePath)], "test-image.jpeg", { type: "image/jpeg" });
-    
-    const upload = await pinata.upload.file(file);
-    console.log("Upload result:", upload);
-
-    // Retrieve the uploaded file
-    const data = await pinata.gateways.get(upload.IpfsHash);
-    console.log("Retrieved data:", data);
-  } catch (error) {
-    console.error("Error:", error);
+      const retrievedFile = await pinataService.getFile(ipfsHash);
+      console.log("Retrieved file size:", retrievedFile.byteLength);
+    } catch (error) {
+      console.error("Error:", error);
+    }
   }
-}
 
-testUpload();
+  testPinataService();
