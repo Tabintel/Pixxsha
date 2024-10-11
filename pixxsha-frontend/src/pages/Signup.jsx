@@ -1,12 +1,60 @@
-import React from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export const description =
   "A login page with two columns. The first column has the login form with email and password. There's a Forgot your passwork link and a link to sign up if you do not have an account. The second column has a cover image.";
 const Signup = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handleSignUp = async () => {
+    // Validate email, password, and confirmPassword inputs
+    if (!email || !password || !confirmPassword) {
+      // Handle validation errors
+      alert("Please fill in all fields.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      // Handle password mismatch error
+      alert("Passwords do not match.");
+      return;
+    }
+
+    try {
+      // Make a request to your TypeScript Express API to register the user
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_API_URL}/api/signup`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        }
+      );
+
+      if (response.ok) {
+        // Registration successful
+        // Redirect the user to the login page or display a success message
+        alert("Registration successful. Please log in.");
+      } else {
+        // Registration failed
+        // Handle the error and display an appropriate message to the user
+        const errorData = await response.json();
+        alert(`Registration failed: ${errorData.message}`);
+      }
+    } catch (error) {
+      // Handle network errors
+      console.error("Error:", error);
+      alert("An error occurred. Please try again later.");
+    }
+  };
+
   return (
     <div className="w-full overflow-y-hidden bg-gray-50 lg:grid lg:min-h-[600px] lg:grid-cols-2 xl:min-h-screen">
       <div className="hidden bg-muted lg:block">
@@ -56,7 +104,11 @@ const Signup = () => {
               <Label htmlFor="password">Confirm Password</Label>
               <Input id="password" type="password" required />
             </div>
-            <Button type="submit" className="w-full bg-black">
+            <Button
+              type="submit"
+              className="w-full bg-black"
+              onClick={handleSignUp}
+            >
               Sign up
             </Button>
             {/* <Button variant="outline" className="w-full">
