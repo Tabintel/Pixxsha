@@ -35,7 +35,3 @@ package.json
 # TypeScript compilation output
 *.tsbuildinfo
 tsconfig.json
-
-# Go mod and sum
-go.mod
-go.sum

@@ -1,0 +1,14 @@
+{
+    "user": {
+      "username": "testuser",
+      "email": "ekeminisamuel19@gmail.com",
+      "password": "securepassword123"
+    },
+    "photo": {
+      "name": "Test Photo",
+      "description": "A test photo for upload",
+      "filename": "test-image.jpeg"
+    },
+    "additionalViewer": "ekeminisamuel19@gmail.com"
+  }
+  
