@@ -1,22 +1,29 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useDropzone } from "react-dropzone";
 import { closePopup } from "../Features/popupslice";
 import { uploadImage } from "../Features/image"; // Assuming this action exists
-import { createTag } from "../Features/Dialog"; // Import the createTag action
+import { createTag, deleteTag } from "../Features/Dialog"; // Import the createTag action
 
 const ImageUploadPopup = () => {
   const [preview, setPreview] = useState(null);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [selectedFolder, setSelectedFolder] = useState("");
   const [isTagging, setIsTagging] = useState(false); // Toggle for using tags
-  const [selectedTag, setSelectedTag] = useState(""); // For tag selection
-  const [newTagName, setNewTagName] = useState("");
+  const [tagsInput, setTagsInput] = useState(""); // For user input of new tags
+  const [tagsArray, setTagsArray] = useState([]); // For storing multiple tags
+  const [existingTags, setExistingTags] = useState([]); // For existing tags
+  const [selectedExistingTags, setSelectedExistingTags] = useState([]); // For storing selected existing tags
   const [isCreatingTag, setIsCreatingTag] = useState(false); // Loading state for creating tag
   const dispatch = useDispatch();
   const isOpen = useSelector((state) => state.popup.isOpen);
   const folders = useSelector((state) => state.folder.folders);
-  const tags = useSelector((state) => state.tags.tags); // Get tags from Redux state
+  const allTags = useSelector((state) => state.tags.tags); // Get tags from Redux state
+
+  // Fetch existing tags when the component mounts
+  useEffect(() => {
+    setExistingTags(allTags);
+  }, [allTags]);
 
   const onDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -43,14 +50,18 @@ const ImageUploadPopup = () => {
           type: uploadedFile.type,
         },
         folderId: isTagging ? null : selectedFolder, // Use folder if tagging is off
-        tags: isTagging ? [selectedTag] : [], // Use tags if tagging is on
+        tags: [...tagsArray, ...selectedExistingTags], // Combine newly created and selected existing tags
       };
 
       dispatch(uploadImage(imagePayload)); // Dispatch the uploadImage action with the file's data
       alert(
         `Uploading ${uploadedFile.name} ${
-          isTagging ? "with tag" : "to folder"
-        }: ${isTagging ? selectedTag : selectedFolder}`
+          isTagging ? "with tags" : "to folder"
+        }: ${
+          [...tagsArray, ...selectedExistingTags]
+            .map((tag) => tag.name)
+            .join(", ") || selectedFolder
+        }`
       );
       handleClose(); // Close the popup after upload
     } else {
@@ -63,20 +74,36 @@ const ImageUploadPopup = () => {
     setPreview(null);
     setUploadedFile(null);
     setSelectedFolder("");
-    setSelectedTag("");
-    setNewTagName("");
+    setTagsInput("");
+    setTagsArray([]); // Reset tags array
+    setSelectedExistingTags([]); // Reset selected existing tags
     dispatch(closePopup());
   };
 
+  const handleAddTag = (id) => {
+    const trimmedInput = tagsInput.trim();
+    if (trimmedInput && !tagsArray.find((tag) => tag.id === id)) {
+      setTagsArray([...tagsArray, { id, name: trimmedInput }]); // Add new tag object to the array
+      setTagsInput(""); // Clear input
+    }
+  };
+
+  const handleRemoveTag = (id) => {
+    setTagsArray(tagsArray.filter((tag) => tag.id !== id));
+    dispatch(deleteTag(id)); // Remove tag from the array by ID
+  };
+
   const handleCreateTag = () => {
-    if (newTagName.trim()) {
+    const trimmedInput = tagsInput.trim();
+    if (trimmedInput) {
       setIsCreatingTag(true); // Set loading state
       const tagPayload = {
         id: Date.now(), // Generate a unique id for the new tag
-        name: newTagName,
+        name: trimmedInput,
       };
       dispatch(createTag(tagPayload)); // Dispatch the createTag action
-      setNewTagName(""); // Clear input after creation
+      handleAddTag(tagPayload.id); // Add the tag to the tagsArray
+      setTagsInput(""); // Clear input after creation
       setIsCreatingTag(false); // Reset loading state
     }
   };
@@ -161,50 +188,73 @@ const ImageUploadPopup = () => {
           </div>
         )}
 
-        {/* Tag Dropdown */}
+        {/* Tags Input */}
         {isTagging && (
           <div className="mt-4">
-            <label htmlFor="tag-select" className="block mb-2 text-sm">
-              Select Tag
+            <label htmlFor="tags-input" className="block mb-2 text-sm">
+              Add New Tags
             </label>
-            <select
-              id="tag-select"
-              value={selectedTag}
-              onChange={(e) => setSelectedTag(e.target.value)}
+            <input
+              type="text"
+              id="tags-input"
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+              placeholder="Type a new tag"
               className="w-full px-4 py-2 border rounded-lg"
+            />
+            <button
+              onClick={() => handleAddTag(Date.now())} // Pass a unique ID for the tag
+              className="mt-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg"
             >
-              <option value="">-- Select Tag --</option>
-              {tags.map((tag) => (
-                <option key={tag.id} value={tag.id}>
-                  {tag.name}
-                </option>
-              ))}
-            </select>
+              Add Tag
+            </button>
+            <button
+              onClick={handleCreateTag}
+              className="mt-2 ml-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+              disabled={isCreatingTag}
+            >
+              {isCreatingTag ? "Creating..." : "Create Tag"}
+            </button>
 
-            {/* Create New Tag */}
-            <div className="mt-4">
-              <label htmlFor="new-tag" className="block mb-2 text-sm">
-                Create New Tag
-              </label>
-              <input
-                type="text"
-                id="new-tag"
-                value={newTagName}
-                onChange={(e) => setNewTagName(e.target.value)}
-                placeholder="New Tag Name"
+            <div className="mt-2">
+              <label className="block mb-2 text-sm">Select Existing Tags</label>
+              <select
+                multiple
+                value={selectedExistingTags.map((tag) => tag.id)}
+                onChange={(e) => {
+                  const selectedIds = Array.from(e.target.selectedOptions).map(
+                    (option) => option.value
+                  );
+                  const selectedTags = existingTags.filter((tag) =>
+                    selectedIds.includes(tag.id.toString())
+                  );
+                  setSelectedExistingTags(selectedTags);
+                }}
                 className="w-full px-4 py-2 border rounded-lg"
-              />
-              <button
-                onClick={handleCreateTag}
-                disabled={isCreatingTag} // Disable button while creating tag
-                className={`mt-2 px-4 py-2 ${
-                  isCreatingTag
-                    ? "bg-gray-400"
-                    : "bg-green-500 hover:bg-green-600"
-                } text-white rounded-lg`}
               >
-                {isCreatingTag ? "Creating..." : "Create Tag"}
-              </button>
+                {existingTags.map((tag) => (
+                  <option key={tag.id} value={tag.id}>
+                    {tag.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mt-2">
+              {tagsArray.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="inline-flex items-center bg-blue-100 text-blue-800 text-sm font-medium mr-2 px-2.5 py-0.5 rounded"
+                >
+                  {tag.name}
+                  <button
+                    onClick={() => handleRemoveTag(tag.id)}
+                    className="ml-1 text-blue-600 hover:text-blue-800"
+                  >
+                    &times;
+                  </button>
+                </span>
+              ))}
             </div>
           </div>
         )}
@@ -214,7 +264,7 @@ const ImageUploadPopup = () => {
           <div className="mt-4">
             <button
               onClick={handleUpload}
-              className="align-center text-white rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 w-full rounded-none"
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
             >
               Upload Image
             </button>

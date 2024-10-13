@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Toaster, toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import { Input } from "./ui/input";

@@ -7,9 +7,9 @@ import { Link } from "react-router-dom";
 export const description =
   "A login page with two columns. The first column has the login form with email and password. There's a Forgot your passwork link and a link to sign up if you do not have an account. The second column has a cover image.";
 const Signup = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [email] = useState("");
+  const [password] = useState("");
+  const [confirmPassword] = useState("");
 
   const handleSignUp = async () => {
     // Validate email, password, and confirmPassword inputs
