@@ -1,14 +1,18 @@
 {
     "user": {
-      "username": "testuser",
       "email": "ekeminisamuel19@gmail.com",
       "password": "securepassword123"
     },
     "photo": {
-      "name": "Test Photo",
-      "description": "A test photo for upload",
-      "filename": "test-image.jpeg"
+      "filename": "sample-image.jpeg",
+      "metadata": {
+        "title": "Sample Photo",
+        "description": "A beautiful landscape"
+      }
     },
-    "additionalViewer": "ekeminisamuel19@gmail.com"
+    "sharing": {
+      "type": "restricted",
+      "recipientEmail": "ekeminisamuel19@gmail.com"
+    }
   }
   
